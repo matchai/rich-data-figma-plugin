@@ -1,3 +1,4 @@
+import get from "dash-get";
 figma.showUI(__html__);
 
 figma.ui.onmessage = async msg => {
@@ -15,9 +16,10 @@ figma.ui.onmessage = async msg => {
 // equivalent json path
 async function replacePlaceholder(node: TextNode, json: Object): Promise<null> {
   if (!node.characters.startsWith("$")) return;
-  const key = node.characters.slice(1);
+  // Remove "$" from start
+  const path = node.characters.slice(1);
 
-  const objValue = json[key];
+  const objValue = get(json, path);
   if (objValue == null) return;
 
   await figma.loadFontAsync(node.fontName as FontName);
