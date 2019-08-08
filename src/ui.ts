@@ -1,6 +1,7 @@
 import "./ui.css";
 
 document.querySelector("form").onsubmit = handleSubmit;
+(document.querySelector(".reset-button") as HTMLInputElement).onclick = handleReset;
 
 async function handleSubmit(event) {
   // Prevent form submission
@@ -18,4 +19,8 @@ async function handleSubmit(event) {
 
   const jsonPreview = document.getElementById("json-preview");
   jsonPreview.innerText = JSON.stringify(body);
+}
+
+function handleReset(event) {
+  parent.postMessage({ pluginMessage: { type: "reset" } }, "*");
 }

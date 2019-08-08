@@ -4,7 +4,12 @@ figma.showUI(__html__);
 figma.ui.onmessage = async msg => {
   if (msg.type === "populate") {
     const textNodes = findTextNodes(figma.currentPage);
-    textNodes.map(textNode => replacePlaceholder(textNode, msg.body));
+    textNodes.forEach(textNode => replacePlaceholder(textNode, msg.body));
+  }
+
+  if (msg.type === "reset") {
+    const textNodes = findTextNodes(figma.currentPage);
+    textNodes.forEach(({ node }) => resetPlaceholder(node));
   }
 };
 
@@ -15,15 +20,24 @@ figma.ui.onmessage = async msg => {
 async function replacePlaceholder({ node, index }, json: Object) {
   if (!node.characters.startsWith("$")) return;
   // Remove "$" from start
-  let path = node.characters.slice(1);
+  const jsonPath = node.characters.slice(1);
   // Populate empty square-brackets with the provided index
-  path = path.replace("[]", `[${index}]`);
+  const indexedPath = jsonPath.replace("[]", `[${index}]`);
 
-  const objValue = get(json, path);
+  const objValue = get(json, indexedPath);
   if (objValue == null) return;
+  setJsonPath(node, jsonPath);
 
   await figma.loadFontAsync(node.fontName as FontName);
   node.characters = String(objValue);
+}
+
+async function resetPlaceholder(node: TextNode) {
+  const jsonPath = getJsonPath(node);
+  if (jsonPath === "") return;
+
+  await figma.loadFontAsync(node.fontName as FontName);
+  node.characters = String("$" + jsonPath);
 }
 
 /**
@@ -41,4 +55,21 @@ function get(obj, path, def = null) {
   function everyFunc(step) {
     return !(step && (obj = obj[step]) === undefined);
   }
+}
+
+function setPluginData(node: BaseNode, key, value) {
+  node.setSharedPluginData("turtle", key, value);
+  console.log({ node });
+}
+
+function getPluginData(node: BaseNode, key) {
+  return node.getSharedPluginData("turtle", key);
+}
+
+function setJsonPath(node: BaseNode, value) {
+  setPluginData(node, "jsonPath", value);
+}
+
+function getJsonPath(node: BaseNode) {
+  return getPluginData(node, "jsonPath");
 }
